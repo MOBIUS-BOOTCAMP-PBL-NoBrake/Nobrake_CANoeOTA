@@ -71,3 +71,15 @@ on message TMU_OTA_TransferEnd
   }
 }
 
+//업데이트 버튼을 클릭했을 때 실행해야하는 로직들 작성.
+on sysvar Update::UpdateTrigger
+{
+  // 버튼을 누를 때(Pressed, 1)만 로그를 출력하도록 조건 설정
+  if (@Update::UpdateTrigger == 1)
+  {
+    write("[PANEL] 업데이트 버튼 클릭 감지!");
+    write("[PANEL] 현재 트리거 값: %d", @Update::UpdateTrigger);
+    
+  }
+}
+
