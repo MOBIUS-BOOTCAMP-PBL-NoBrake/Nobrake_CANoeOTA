@@ -1,4 +1,5 @@
-﻿/*@!Encoding:65001*/
+﻿
+/*@!Encoding:65001*/
 includes
 {
   
@@ -6,6 +7,80 @@ includes
 
 variables
 {
+  // --- 수신 데이터 버퍼 ---
+  byte gVumBuffer[5242880]; // 최대 5MB 버퍼 (메모리에만 상주)
+  long gExpectedSize = 0;   
+  long gCurrentReceived = 0; 
   
+  // --- 상태 관리 ---
+  int gIsUpdating = 0;
+}
+
+// [1] OTA 메타데이터 수신 (ID: 0x200)
+on message TMU_OTA_Metadata
+{
+  gExpectedSize = this.Sig_OTA_TotalSize;
+  gCurrentReceived = 0; // 버퍼 인덱스 초기화
+  gIsUpdating = 1;
+  
+  //체크용 로그
+  write("[VUM] OTA 수신 준비 완료: 예상 크기 %ld bytes", gExpectedSize);
+  write("[VUM] 수신된 펌웨어 버전: %u", this.Sig_OTA_Version);
+}
+
+// [2] OTA 데이터 블록 수신 (ID: 0x201)
+on message TMU_OTA_DataBlock
+{
+  int i;
+  int blockLen;
+  long baseIdx;
+
+  if (gIsUpdating == 1 && this.can == 2 && this.dir == Rx)
+  {
+    blockLen = this.Sig_BlockLen; // 유효 데이터 길이 (최대 6바이트)
+    baseIdx = gCurrentReceived;
+
+    if (baseIdx + blockLen <= elcount(gVumBuffer))
+    {
+      for (i = 0; i < blockLen; i++)
+      {
+        gVumBuffer[baseIdx + i] = this.Sig_BlockData0_5.byte(i);
+      }
+      gCurrentReceived += blockLen;
+    }
+
+    // --- 수신 확인용 로그 추가 ---
+    // 500개 블록마다 한 번씩 현재 수신 상태를 Write 창에 출력합니다.
+    if (this.Sig_BlockSeq % 10 == 0) 
+      {
+        // 데이터의 첫 바이트(byte(0))도 로그에 찍어서 0이 아닌지 확인
+        write("[VUM] 수신 중... 블록번호: %d | 총량: %ld | 샘플데이터: 0x%02X", (int)this.Sig_BlockSeq, gCurrentReceived, (int)this.Sig_BlockData0_5.byte(0));
+      }
+  }
+}
+
+// [3] OTA 전송 종료 수신 (ID: 0x202)
+on message TMU_OTA_TransferEnd
+{
+  if (gIsUpdating == 1 && this.can == 2 && this.dir == Rx)
+  {
+    // 파일 저장 로직을 제거하고 완료 로그만 출력
+    write("[VUM] OTA 데이터 수신 완료!");
+    write("[VUM] 메모리 버퍼(gVumBuffer)에 %ld bytes가 저장되었습니다.", gCurrentReceived);
+    
+    gIsUpdating = 0; 
+  }
+}
+
+//업데이트 버튼을 클릭했을 때 실행해야하는 로직들 작성.
+on sysvar Update::UpdateTrigger
+{
+  // 버튼을 누를 때(Pressed, 1)만 로그를 출력하도록 조건 설정
+  if (@Update::UpdateTrigger == 1)
+  {
+    write("[PANEL] 업데이트 버튼 클릭 감지!");
+    write("[PANEL] 현재 트리거 값: %d", @Update::UpdateTrigger);
+    
+  }
 }
 
