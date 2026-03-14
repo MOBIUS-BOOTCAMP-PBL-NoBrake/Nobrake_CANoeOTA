@@ -11,25 +11,26 @@ variables
 
 on message *
 {
-  // 1. 수신된 채널이 CAN 1이고, 외부에서 들어온(Rx) 메시지인지 확인
-  if (this.can == 1 && this.dir == Rx)
+  // 1. CAN 3(TM)에서 오는 메시지를 CAN 2(VUM)로 중계
+  if (this.can == 3 && this.dir == Rx)
   {
-    // 2. 우리가 전달해야 할 특정 ID들만 체크합니다 (0x200, 0x201, 0x202)
     if (this.id == 0x200 || this.id == 0x201 || this.id == 0x202)
     {
-      // 3. 목적지 채널을 CAN 2(Update 망)로 변경
-      this.can = 2;
-      
-      // 4. CAN FD 포맷 유지
-      this.FDF = 1;
-      
-      // 5. 전송
+      this.can = 2; // 목적지를 Update 망(CAN 2)으로 설정
       output(this);
-      
-      // 로그 출력 (ID 0x201은 너무 많으므로 제외)
       if (this.id == 0x200) write("[GW] OTA 시작 메타데이터 중계");
       if (this.id == 0x202) write("[GW] OTA 종료 알림 중계");
     }
   }
+  
+  // 2. CAN 2(VUM)에서 오는 요청(0x150)을 CAN 3(TM)으로 중계
+  if (this.can == 2 && this.dir == Rx)
+  {
+    if (this.id == 0x150)
+    {
+      this.can = 3; // 목적지를 Telematics 망(CAN 3)으로 설정
+      output(this);
+      write("[GW] VUM -> TM 요청 중계 (0x150)");
+    }
+  }
 }
-
