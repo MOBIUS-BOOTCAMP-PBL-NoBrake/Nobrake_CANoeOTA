@@ -1,5 +1,4 @@
-﻿
-/*@!Encoding:65001*/
+﻿/*@!Encoding:65001*/
 includes
 {
   
@@ -72,15 +71,30 @@ on message TMU_OTA_TransferEnd
   }
 }
 
-//업데이트 버튼을 클릭했을 때 실행해야하는 로직들 작성.
+/* @brief: 패널의 업데이트 버튼 클릭 시 VUM 메시지 전송 */
 on sysvar Update::UpdateTrigger
 {
-  // 버튼을 누를 때(Pressed, 1)만 로그를 출력하도록 조건 설정
+  // 1. 버튼을 누를 때(Pressed, 1)만 실행
   if (@Update::UpdateTrigger == 1)
   {
-    write("[PANEL] 업데이트 버튼 클릭 감지!");
-    write("[PANEL] 현재 트리거 값: %d", @Update::UpdateTrigger);
+    // CAN 메시지 변수 선언 (DBC에 정의된 메시지 타입 사용)
+    message VUM_OTA_EligibilityAndReq vumMsg;
+
+    write("[PANEL] 업데이트 버튼 클릭 감지! VUM 메시지 전송을 시작합니다.");
+
+    // 2. 메시지 데이터(시그널) 설정
+    // 시그널 명칭은 DBC 정의서와 반드시 일치해야 합니다.
+    vumMsg.Sig_VehicleID = 1234;          // 차량 식별자 (예시값)
+    vumMsg.Sig_TargetECU_ID = 0x01;       // 타겟 ECU ID (예시값)
+    vumMsg.Sig_OTA_Eligible = 1;          // 업데이트 조건 만족 상태로 설정
+    vumMsg.Sig_OTA_DataRequest = 1;       // 데이터 요청 플래그 설정
+    vumMsg.Sig_RequestedVersion = 2;    // 요청 SW 버전 (예시값)
     
+    // 3. CAN 버스로 메시지 전송
+    output(vumMsg);
+    
+    write("[VUM] 전송 완료: ID=0x150, Eligible=1, DataRequest=1");
+    write("[PANEL] 현재 트리거 값: %d", @Update::UpdateTrigger);
   }
 }
 
