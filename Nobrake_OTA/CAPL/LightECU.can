@@ -6,6 +6,44 @@ includes
 
 variables
 {
-  
+
 }
 
+/*--------------------------------------------------
+  UpdateProgress(0~100) -> ProgressStateIndex(0~10)
+--------------------------------------------------*/
+void updateProgressStateIndex()
+{
+  int progress;
+  int state;
+
+  progress = SysGetVariableInt(sysvar::OTA::UpdateProgress);
+
+  if (progress < 0)
+    progress = 0;
+  else if (progress > 100)
+    progress = 100;
+
+  state = progress / 10;
+
+  SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
+
+  //write("[LIGHT NODE] UpdateProgress=%d, ProgressStateIndex=%d", progress, state);
+}
+
+/*----------------
+  initial setting
+-----------------*/
+on start
+{
+  SysSetVariableInt(sysvar::OTA::UpdateProgress, 0);
+  SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 0);
+
+  //write("[LIGHT NODE] started");
+  //write("[LIGHT NODE] UpdateProgress=0, ProgressStateIndex=0");
+}
+
+on sysvar sysvar::OTA::UpdateProgress
+{
+  updateProgressStateIndex();
+}
