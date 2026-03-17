@@ -6,6 +6,47 @@ includes
 
 variables
 {
+  // 1. 실제 DBC에 정의된 메시지 이름으로 객체 선언
+  message Veh_OTA_IgnitionState msgIgnition;
   
+  // 2. 100ms 주기를 제어할 밀리초 타이머 선언
+  mstimer tIgnitionTimer; 
 }
 
+// 패널에서 시스템 변수(시동 스위치)를 누를 때마다 실행됨
+on sysvar Vehicle::Startup
+{
+  // 스위치의 현재 상태(0 또는 1)를 메시지 시그널에 즉시 업데이트
+  msgIgnition.Sig_IgnitionState = @this; 
+  
+  if(@this == 1) // 시동 스위치 ON
+  {
+    // 켜지는 즉시 1회 전송
+    output(msgIgnition); 
+    
+    // 100ms 타이머 가동 (이후 주기적으로 전송 시작)
+    setTimer(tIgnitionTimer, 100); 
+    
+    write("Ignition ON: Periodic Transmission Started (100ms)");
+  }
+  else // 시동 스위치 OFF
+  {
+    // 주기적 전송을 즉시 중단
+    cancelTimer(tIgnitionTimer); 
+    
+    // 꺼졌다는 상태를 마지막으로 1회 전송하여 다른 제어기들이 알 수 있게 함
+    output(msgIgnition); 
+    
+    write("Ignition OFF: Periodic Transmission Stopped");
+  }
+}
+
+// 100ms 타이머가 만료될 때마다 자동으로 실행되는 이벤트
+on timer tIgnitionTimer
+{
+  // 이미 on sysvar에서 Sig_ignitionState=1로 세팅해두었으므로 쏘기만 하면 됨
+  output(msgIgnition);
+  
+  // 무한 반복을 위해 타이머 재설정
+  setTimer(tIgnitionTimer, 100); 
+}

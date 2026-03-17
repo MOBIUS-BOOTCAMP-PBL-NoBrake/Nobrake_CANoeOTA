@@ -24,6 +24,8 @@ variables
 //h키 대신 버튼 클릭시 수행
 on message VUM_OTA_EligibilityAndReq
 {
+  if (this.can != 3) return;
+  
   // 1. 시그널 값 확인 (DBC 시그널 명칭과 일치해야 함)
   // 조건 만족(1) AND 데이터 요청(1) 상태인지 체크
   if (this.Sig_OTA_Eligible == 1 && this.Sig_OTA_DataRequest == 1)
