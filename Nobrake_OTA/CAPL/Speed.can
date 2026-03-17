@@ -1,11 +1,46 @@
 ﻿/*@!Encoding:65001*/
-includes
-{
-  
-}
+includes { }
 
 variables
 {
-  
+  // 속도 메시지 객체 선언 (0x103)
+  message Veh_OTA_speedReq msgSpeedreq;
+  mstimer tSpeedreqTimer;
+  int isIgnitionOn;
 }
 
+// 시뮬레이션 시작 시 속도 메시지를 100ms 주기로 계속 쏘기 시작
+on start
+{
+  setTimer(tSpeedreqTimer, 100);
+}
+
+// 패널의 트랙바(시스템 변수)를 움직일 때마다 실행됨
+on sysvar Vehicle::Speed
+{
+
+  isIgnitionOn = @Vehicle::Startup;
+  if (isIgnitionOn == 0)
+  {
+    if (@this != 0)
+    {
+      @this = 0;
+      write("[speed]경고 : 시동이 꺼져있어 속도를 올릴 수 없습니다");
+    }
+  }
+  else
+  {
+  // 트랙바의 현재 값을 메시지의 속도 시그널에 즉시 업데이트
+    msgSpeedreq.Sig_VehicleSpeed = @this;
+    write("[Speed Node] 속도 값 변경됨: %d km/h", @this);
+  }
+}
+
+// 100ms 주기로 계속 버스에 전송
+on timer tSpeedreqTimer
+{
+  output(msgSpeedreq);
+
+  setTimer(tSpeedreqTimer, 5000);
+
+}
