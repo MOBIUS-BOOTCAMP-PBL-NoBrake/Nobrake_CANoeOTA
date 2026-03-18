@@ -1,8 +1,5 @@
 ﻿/*@!Encoding:65001*/
-includes
-{
-  
-}
+includes { }
 
 variables
 {
