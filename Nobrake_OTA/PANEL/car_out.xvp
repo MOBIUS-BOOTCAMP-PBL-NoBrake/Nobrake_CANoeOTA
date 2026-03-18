@@ -22,7 +22,7 @@
       <Property Name="Name">Xcd821461e70bee4407e8e64e4d81b29e0c0a</Property>
       <Property Name="Size">182, 237</Property>
       <Property Name="Location">150, 384</Property>
-      <Property Name="SymbolConfiguration">8;2;CANdb1;GateWay;Veh_AmbientLux;Sig_AmbientLux;1;Input;;-1;;;Value;;;0</Property>
+      <Property Name="SymbolConfiguration">8;16;UI_Status;;;light;1;;;-1;;;Value;;;0</Property>
       <Property Name="ImageFile">..\image\light_list.png</Property>
       <Property Name="TabIndex">4</Property>
       <Property Name="Epsilon">0</Property>
