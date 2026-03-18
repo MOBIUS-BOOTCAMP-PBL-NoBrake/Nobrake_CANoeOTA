@@ -53,7 +53,7 @@
       <Property Name="Name">X232d3097e8ed1e4b1ce9a5ce5b9cd1a95daf</Property>
       <Property Name="Size">37, 39</Property>
       <Property Name="Location">1027, 2</Property>
-      <Property Name="SymbolConfiguration">8;2;CANdb1;GateWay;Veh_AmbientLux;Sig_AmbientLux;1;Input;;-1;;;Value;;;0</Property>
+      <Property Name="SymbolConfiguration">8;2;NobrakeDBC;GateWay;Veh_AmbientLux;Sig_AmbientLux;1;Input;;-1;;;Value;;;0</Property>
       <Property Name="ImageFile">..\image\light_sensor_list.png</Property>
       <Property Name="IsProportional">False</Property>
       <Property Name="TabIndex">4</Property>
@@ -138,7 +138,7 @@
       <Property Name="Size">58, 161</Property>
       <Property Name="Location">126, 73</Property>
       <Property Name="SymbolConfiguration">8;16;UI_Status;;;dashboard_speed;1;;;-1;;;Value;;;0</Property>
-      <Property Name="ImageFile">..\..\..\..\..\..\Users\lwknk\Downloads\Group 116.png</Property>
+      <Property Name="ImageFile">..\image\speed_line_list.png</Property>
       <Property Name="IsProportional">False</Property>
       <Property Name="TabIndex">2</Property>
       <Property Name="Epsilon">0</Property>
@@ -173,7 +173,7 @@
       <Property Name="ValueDisplay">Double</Property>
       <Property Name="UsedValueTable">RawValue</Property>
       <Property Name="DescriptionSize">5, 29</Property>
-      <Property Name="SymbolConfiguration">8;2;CANdb1;Speed;Veh_VehicleSpeed;Sig_VehicleSpeed;1;Input;;-1;;;Value;;;0</Property>
+      <Property Name="SymbolConfiguration">8;2;NobrakeDBC;GateWay;Veh_OTA_speedReq;Sig_VehicleSpeed;1;Input;;-1;;;Value;;;0</Property>
     </Object>
     <Object Type="Vector.CANalyzer.Panels.Design.PictureBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=18.0.150.0, Culture=neutral, PublicKeyToken=null" Name="Xc996f29ee8613e47a7ebe03e55756e3b204c" ControlName="dashboard">
       <Property Name="Name">Xc996f29ee8613e47a7ebe03e55756e3b204c</Property>
