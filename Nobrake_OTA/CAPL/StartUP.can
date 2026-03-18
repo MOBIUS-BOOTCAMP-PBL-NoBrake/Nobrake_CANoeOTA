@@ -6,6 +6,24 @@ includes
 
 variables
 {
-  
+  message Input::Veh_OTA_IgnitionState msg_state;
 }
+
+on sysvar UI_Status::start_up_btn
+{
+//  // 버튼 한 번 누르면 시동 상태 변경
+//  if(@sysvar::UI_Status::start_up_btn == 1){
+//    msg_state.Sig_IgnitionState ++; 
+  
+//    // ON 상태(2)에서 한 번 더 누르면 시동 꺼짐(0).
+//    if(msg_state.Sig_IgnitionState > 2){ 
+//      msg_state.Sig_IgnitionState = 0;
+//    }
+    
+//    output(msg_state);
+//  }
+  msg_state.Sig_IgnitionState = @sysvar::UI_Status::start_up_btn;
+  output(msg_state);
+}
+
 

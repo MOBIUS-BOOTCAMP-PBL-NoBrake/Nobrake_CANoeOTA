@@ -6,6 +6,33 @@ includes
 
 variables
 {
+}
+
+on message can1.Input::Veh_SteeringAngle{
+  message Light::Veh_SteeringAngle m_LightSteer;
+    
+  m_LightSteer = this;
+  m_LightSteer.can = 3;
+    
+  output(m_LightSteer);
   
 }
 
+on message can1.Input::Veh_VehicleSpeed {
+  message Light::Veh_VehicleSpeed m_out;
+  
+  m_out = this;
+  m_out.can = 3;
+  
+  output(m_out);
+}
+
+on message can1.Input::Veh_AmbientLux{
+  message Light::Veh_AmbientLux m_AmbientLux;
+    
+  m_AmbientLux = this;
+  m_AmbientLux.can = 3;
+    
+  output(m_AmbientLux);
+  
+}
