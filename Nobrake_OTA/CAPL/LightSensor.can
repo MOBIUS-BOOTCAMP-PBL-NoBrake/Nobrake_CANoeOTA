@@ -37,7 +37,7 @@ on timer tUpdateTimer
   }
   // 오후
   else {
-    strncpy(ampm, "AM", 5);
+    strncpy(ampm, "PM", 5);
     h12 = (t[2] == 12) ? 12 : t[2] - 12;
   }
   snprintf(timeBuf, elcount(timeBuf), "%s %02d:%02d", ampm, h12, t[1]);
@@ -51,7 +51,7 @@ on timer tUpdateTimer
   // 조도 센서 값 변경
   // 낮 시간 (AM 06:00 ~ PM 06:00)
   if (t[2] >= 6 && t[2] <= 18) {
-    $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = 1;
+    $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = 0;
   }
   // 밤 시간 (그 외 모든 시간)
   else {
