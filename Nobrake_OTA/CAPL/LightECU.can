@@ -10,13 +10,15 @@ variables
     // --- 수신 데이터 버퍼 ---
   byte gVumBuffer[5242880]; // 최대 5MB 버퍼 (메모리에만 상주)
   long gExpectedSize = 0;   // Sig_OTA_TotalSize
-  word gOtaVersion = 0; //Sig_OTA_Version
+  word gOtaVersion = 0; //Sig_OTA_Version 업데이트 버전 롤백포함
+  word present_Version = 1; // 현재버전
   byte gTargetECU_ID; // Sig_TargetECU_ID
   long gCurrentReceived = 0;  
     // --- 상태 관리 ---
   int gIsUpdating = 0;
   int gCurrentIgnition = 0; //시동상태 (0:off, 1:acc, 2:on)
   int gCurrentSpeed = 0;// 차량속도
+
   // -- 프로그레스 진행 관련
   int progressrate;
   int state;
