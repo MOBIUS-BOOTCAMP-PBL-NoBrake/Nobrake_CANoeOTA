@@ -26,6 +26,39 @@ variables
 }
 
 
+void sendEndMessage()
+{
+    message Light_OTA_Complete lightECUMsg;
+
+    write("[PANEL] 업데이트 완료 메시지 전송을 시작합니다.");
+
+    lightECUMsg.Sig_TargetECU_ID = 0x01;       // 타겟 ECU ID (예시값)
+    lightECUMsg.Sig_OTA_Result = 1;          // 업데이트 종료 상태값 (1 = success)
+    lightECUMsg.Sig_InstalledVersion = gOtaVersion;       // 업데이트 버전
+    lightECUMsg.Sig_ErrorCode = 0;    // 에러코드 (0 = non error)
+    
+    // 3. CAN 버스로 메시지 전송
+    output(lightECUMsg);
+    
+    write("[LightECU] 전송 완료");
+}
+
+/*----------------
+  initial setting
+-----------------*/
+on start
+{
+  SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 0);
+  gTargetECU_ID = 0;
+  gExpectedSize = 0;
+  gOtaVersion = 0;
+  gCurrentReceived = 0;
+  gIsUpdating = 0;
+
+  write("[LightECU] started");
+  write("[Pannel] test : 업데이트 트리거%d", SysGetVariableInt(sysvar::Update::UpdateTrigger));
+  write("[LightECU] ProgressStateIndex=0");
+}
 
 // [1] OTA 메타데이터 수신 (ID: 0x200)
 on message VUM_OTA_Metadata
@@ -61,36 +94,36 @@ on message VUM_OTA_DataBlock
         gVumBuffer[baseIdx + i] = this.Sig_BlockData0_5.byte(i);
       }
       gCurrentReceived += blockLen;
+      updateProgressStateIndex();
     }
 
     // --- 수신 확인용 로그 추가 ---
     // 500개 블록마다 한 번씩 현재 수신 상태를 Write 창에 출력합니다.
     if (this.Sig_BlockSeq % 10 == 0) 
-      {
-        // 데이터의 첫 바이트(byte(0))도 로그에 찍어서 0이 아닌지 확인
-        write("[LightECU] 수신 중... 블록번호: %d | 총량: %ld | 샘플데이터: 0x%02X", (int)this.Sig_BlockSeq, gCurrentReceived, (int)this.Sig_BlockData0_5.byte(0));
-        write("[LightECU] 진행률: %d%% (%ld/%ld bytes)", 
-        (int)(gCurrentReceived * 100 / gExpectedSize), 
-        gCurrentReceived, 
-        gExpectedSize);
-        }
-        progressrate = (gCurrentReceived * 100 / gExpectedSize);
-        write("[프로그레스진행률] %d",progressrate);
-        state = progressrate/10;
-        SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
-        
-        if (gOtaVersion == 2) //OTA프로레스바 출력
-        {
-        panel_state = 10 + (progressrate % 4);
-        SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
-        }
-        else if (gOtaVersion == 1) //롤백 프로그레스바 출력
-        {
-        panel_state = 15 + (progressrate % 4);
-        SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
-        }
+    {
+      // 데이터의 첫 바이트(byte(0))도 로그에 찍어서 0이 아닌지 확인
+      write("[LightECU] 수신 중... 블록번호: %d | 총량: %ld | 샘플데이터: 0x%02X", (int)this.Sig_BlockSeq, gCurrentReceived, (int)this.Sig_BlockData0_5.byte(0));
+      write("[LightECU] 진행률: %d%% (%ld/%ld bytes)", 
+      (int)(gCurrentReceived * 100 / gExpectedSize), 
+      gCurrentReceived, 
+      gExpectedSize);
+    }
+    progressrate = (gCurrentReceived * 100 / gExpectedSize);
+    write("[프로그레스진행률] %d",progressrate);
+    state = progressrate/10;
+    SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
       
-      }
+    if (gOtaVersion == 2) //OTA프로레스바 출력
+    {
+      panel_state = 10 + (progressrate % 4);
+      SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
+    }
+    else if (gOtaVersion == 1) //롤백 프로그레스바 출력
+    {
+      panel_state = 15 + (progressrate % 4);
+      SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
+    }
+  }
 }
 
 // [3] OTA 전송 종료 수신 (ID: 0x202)
@@ -105,23 +138,23 @@ on message VUM_OTA_TransferEnd
     gIsUpdating = 0; 
     
     // 업데이트 완료 메시지 보내기 ( ->VUM, Telamatics )
-    
+    sendEndMessage();
     
     present_Version = gOtaVersion; // 업데이트 완료후 버전 업데이트
     @Update::update_version = present_Version;
     
     if (gOtaVersion == 2) //OTA 완료
     {
-    SysSetVariableInt(sysvar::UI_Status::window_discription, 14);
-    @UI_Status::rollback = 1;
-    @UI_Status::download_btn = 5;
+      SysSetVariableInt(sysvar::UI_Status::window_discription, 14);
+      @UI_Status::rollback = 1;
+      @UI_Status::download_btn = 5;
     }
     else if (gOtaVersion == 1) //롤백 프로그레스바 출력
     {
-    SysSetVariableInt(sysvar::UI_Status::window_discription, 0);
-    @UI_Status::rollback = 2;  
-    @UI_Status::download_btn = 2;
-    SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 11);
+      SysSetVariableInt(sysvar::UI_Status::window_discription, 0);
+      @UI_Status::rollback = 2;  
+      @UI_Status::download_btn = 2;
+      SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 11);
     }
   }
 }
