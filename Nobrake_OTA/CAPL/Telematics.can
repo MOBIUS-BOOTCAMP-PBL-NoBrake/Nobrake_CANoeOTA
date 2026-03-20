@@ -213,6 +213,7 @@ void SendTransferEnd()
   output(msg);
   //체크용 로그
   write("[TM] 차량 내 OTA 전송 완료: 종료 프레임(0x202) 전송됨.");
+  @UI_Status::download_btn = 4;
 }
 
 

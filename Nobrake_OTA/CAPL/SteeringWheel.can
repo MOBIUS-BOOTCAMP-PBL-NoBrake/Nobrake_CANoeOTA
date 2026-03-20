@@ -15,6 +15,15 @@ variables
 // 핸들값이 바뀔 때마다 실행
 on sysvar_update sysvar::UI_Status::steering_wheel_btn
 {
+  if (@UI_Status::start_up_btn == 0 || @UI_Status::start_up_btn == 1)
+  {
+    if (@this != 18)
+    {
+      @this = 18;
+    }
+  }
+  else
+  {
   write("%d",@sysvar::UI_Status::steering_wheel_btn);
   // 값이 바뀌면 일단 복귀 타이머를 멈춤 (사용자가 조작 중이라는 뜻)
   cancelTimer(centerTimer);
@@ -22,11 +31,13 @@ on sysvar_update sysvar::UI_Status::steering_wheel_btn
   // 1000ms(1초) 동안 값이 안 바뀌면 "손을 뗐다"고 판단하고 타이머 시작
   setTimer(centerTimer, 1000); 
   
+  // 속도 50이상일때 도로 꺾임.
+
   // 패널 도로 변경 
   // 조도 값에 따라 밤/낮 도로 변경 : (조도값*3)
-  $Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle = (initial_value - @sysvar::UI_Status::steering_wheel_btn) * 5;
+  $Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle = (initial_value - (36-@sysvar::UI_Status::steering_wheel_btn)) * 5; // 휠 인덱스 번호 36부터 시작하도록 수정
   // 왼쪽 도로 
-  if($Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle < -25){
+  if($Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle < -25 && $Input::Speed::Veh_VehicleSpeed::Sig_VehicleSpeed >= 50){
     // 차량 내부 도로
     @sysvar::UI_Status::road_front = 0 + ($Input::GateWay::Veh_AmbientLux::Sig_AmbientLux*3);
     
@@ -39,7 +50,7 @@ on sysvar_update sysvar::UI_Status::steering_wheel_btn
     }
   }
   // 오른쪽 도로
-  else if($Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle > 25){
+  else if($Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle > 25 && $Input::Speed::Veh_VehicleSpeed::Sig_VehicleSpeed >= 50){
     // 차량 내부 도로
     @sysvar::UI_Status::road_front = 2 + ($Input::GateWay::Veh_AmbientLux::Sig_AmbientLux*3);
     
@@ -56,7 +67,7 @@ on sysvar_update sysvar::UI_Status::steering_wheel_btn
       @sysvar::UI_Status::road_front = 1 + ($Input::GateWay::Veh_AmbientLux::Sig_AmbientLux*3);
       @sysvar::UI_Status::road_up = 2 + ($Input::GateWay::Veh_AmbientLux::Sig_AmbientLux*5);
   }
-  
+  }
 }
 
 

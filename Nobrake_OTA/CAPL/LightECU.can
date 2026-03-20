@@ -10,52 +10,19 @@ variables
     // --- 수신 데이터 버퍼 ---
   byte gVumBuffer[5242880]; // 최대 5MB 버퍼 (메모리에만 상주)
   long gExpectedSize = 0;   // Sig_OTA_TotalSize
-  word gOtaVersion = 0; //Sig_OTA_Version
+  word gOtaVersion = 0; //Sig_OTA_Version 업데이트 버전 롤백포함
+  word present_Version = 1; // 현재버전
   byte gTargetECU_ID; // Sig_TargetECU_ID
   long gCurrentReceived = 0;  
     // --- 상태 관리 ---
   int gIsUpdating = 0;
   int gCurrentIgnition = 0; //시동상태 (0:off, 1:acc, 2:on)
   int gCurrentSpeed = 0;// 차량속도
-}
 
-/*--------------------------------------------------
-  UpdateProgress(0~100) -> ProgressStateIndex(0~10)
---------------------------------------------------*/
-void updateProgressStateIndex()
-{
-  int progress;
+  // -- 프로그레스 진행 관련
+  int progressrate;
   int state;
-
-  progress = SysGetVariableInt(sysvar::OTA::UpdateProgress);
-
-  if (progress < 0)
-    progress = 0;
-  else if (progress > 100)
-    progress = 100;
-
-  state = progress / 10;
-
-  SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
-
-  //write("[LIGHT NODE] UpdateProgress=%d, ProgressStateIndex=%d", progress, state);
-}
-
-/*----------------
-  initial setting
------------------*/
-on start
-{
-  SysSetVariableInt(sysvar::OTA::UpdateProgress, 0);
-  SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 0);
-
-  //write("[LIGHT NODE] started");
-  //write("[LIGHT NODE] UpdateProgress=0, ProgressStateIndex=0");
-}
-
-on sysvar sysvar::OTA::UpdateProgress
-{
-  updateProgressStateIndex();
+  int panel_state;
 }
 
 
@@ -103,11 +70,27 @@ on message VUM_OTA_DataBlock
         // 데이터의 첫 바이트(byte(0))도 로그에 찍어서 0이 아닌지 확인
         write("[LightECU] 수신 중... 블록번호: %d | 총량: %ld | 샘플데이터: 0x%02X", (int)this.Sig_BlockSeq, gCurrentReceived, (int)this.Sig_BlockData0_5.byte(0));
         write("[LightECU] 진행률: %d%% (%ld/%ld bytes)", 
-      (int)(gCurrentReceived * 100 / gExpectedSize), 
-      gCurrentReceived, 
-      gExpectedSize);
+        (int)(gCurrentReceived * 100 / gExpectedSize), 
+        gCurrentReceived, 
+        gExpectedSize);
+        }
+        progressrate = (gCurrentReceived * 100 / gExpectedSize);
+        write("[프로그레스진행률] %d",progressrate);
+        state = progressrate/10;
+        SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
+        
+        if (gOtaVersion == 2) //OTA프로레스바 출력
+        {
+        panel_state = 10 + (progressrate % 4);
+        SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
+        }
+        else if (gOtaVersion == 1) //롤백 프로그레스바 출력
+        {
+        panel_state = 15 + (progressrate % 4);
+        SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
+        }
+      
       }
-  }
 }
 
 // [3] OTA 전송 종료 수신 (ID: 0x202)
@@ -120,5 +103,25 @@ on message VUM_OTA_TransferEnd
     write("[LightECU] 메모리 버퍼(gVumBuffer)에 %ld bytes가 저장되었습니다.", gCurrentReceived);
     write("[확인용] %s", gVumBuffer[0]);
     gIsUpdating = 0; 
+    
+    // 업데이트 완료 메시지 보내기 ( ->VUM, Telamatics )
+    
+    
+    present_Version = gOtaVersion; // 업데이트 완료후 버전 업데이트
+    @Update::update_version = present_Version;
+    
+    if (gOtaVersion == 2) //OTA 완료
+    {
+    SysSetVariableInt(sysvar::UI_Status::window_discription, 14);
+    @UI_Status::rollback = 1;
+    @UI_Status::download_btn = 5;
+    }
+    else if (gOtaVersion == 1) //롤백 프로그레스바 출력
+    {
+    SysSetVariableInt(sysvar::UI_Status::window_discription, 0);
+    @UI_Status::rollback = 2;  
+    @UI_Status::download_btn = 2;
+    SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 11);
+    }
   }
 }

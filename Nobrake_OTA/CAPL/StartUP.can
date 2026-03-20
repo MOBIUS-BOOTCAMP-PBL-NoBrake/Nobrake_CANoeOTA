@@ -22,6 +22,16 @@ on sysvar UI_Status::start_up_btn
     
 //    output(msg_state);
 //  }
+  if (@UI_Status::start_up_btn==0)
+ {
+    @UI_Status::display_onff = 0; 
+ }
+ else
+ {
+   @UI_Status::display_onff = 1; 
+
+ }
+  
   msg_state.Sig_IgnitionState = @sysvar::UI_Status::start_up_btn;
   output(msg_state);
 }

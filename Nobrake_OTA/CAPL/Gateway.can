@@ -81,6 +81,11 @@ on message *
         write("[GW] 업데이트 요청 중계 (Update -> Network)");
         RouteMsg(this, CH_NETWORK);
       }
+      if (this.id == 0x151) 
+      {
+        //write("[GW] LIghtECU로 업데이트 파일 전송)");
+        RouteMsg(this, CH_LIGHT);
+      }
     }
 
 
