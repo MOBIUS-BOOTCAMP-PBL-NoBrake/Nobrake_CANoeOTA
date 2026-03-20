@@ -94,7 +94,11 @@ on message TMU_OTA_TransferEnd
 }
 
 
-
+// 업데이트 완료 메세지 전송 테스트
+on message Light_OTA_Complete
+{
+  write("[VUM] 업데이트 완료 메세지 수신 완료");
+}
 
 
 

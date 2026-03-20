@@ -268,3 +268,9 @@ void makeDummyDataForTest()
   write("[TM] 알림: 파일 없이 내부 버퍼 데이터로 전송을 시작합니다.");
 }
 */
+
+// 업데이트 완료 메세지 전송 테스트
+on message Light_OTA_Complete
+{
+  write("[TM] 업데이트 완료 메세지 수신 완료");
+}

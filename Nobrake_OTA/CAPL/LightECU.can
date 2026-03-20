@@ -24,11 +24,10 @@ variables
 --------------------------------------------------*/
 void updateProgressStateIndex()
 {
-  int progress;
+  long progress;
   int state;
 
-  progress = SysGetVariableInt(sysvar::OTA::UpdateProgress);
-
+  progress = (double)gCurrentReceived / gExpectedSize * 100;
   if (progress < 0)
     progress = 0;
   else if (progress > 100)
@@ -38,7 +37,24 @@ void updateProgressStateIndex()
 
   SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
 
-  //write("[LIGHT NODE] UpdateProgress=%d, ProgressStateIndex=%d", progress, state);
+  write("[LightECU] UpdateProgress=%d, ProgressStateIndex=%d", progress, state);
+}
+
+void sendEndMessage()
+{
+    message Light_OTA_Complete lightECUMsg;
+
+    write("[PANEL] 업데이트 완료 메시지 전송을 시작합니다.");
+
+    lightECUMsg.Sig_TargetECU_ID = 0x01;       // 타겟 ECU ID (예시값)
+    lightECUMsg.Sig_OTA_Result = 1;          // 업데이트 종료 상태값 (1 = success)
+    lightECUMsg.Sig_InstalledVersion = gOtaVersion;       // 업데이트 버전
+    lightECUMsg.Sig_ErrorCode = 0;    // 에러코드 (0 = non error)
+    
+    // 3. CAN 버스로 메시지 전송
+    output(lightECUMsg);
+    
+    write("[LightECU] 전송 완료");
 }
 
 /*----------------
@@ -46,19 +62,17 @@ void updateProgressStateIndex()
 -----------------*/
 on start
 {
-  SysSetVariableInt(sysvar::OTA::UpdateProgress, 0);
   SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 0);
+  gTargetECU_ID = 0;
+  gExpectedSize = 0;
+  gOtaVersion = 0;
+  gCurrentReceived = 0;
+  gIsUpdating = 0;
 
-  //write("[LIGHT NODE] started");
-  //write("[LIGHT NODE] UpdateProgress=0, ProgressStateIndex=0");
+  write("[LightECU] started");
+  write("[Pannel] test : 업데이트 트리거%d", SysGetVariableInt(sysvar::Update::UpdateTrigger));
+  write("[LightECU] ProgressStateIndex=0");
 }
-
-on sysvar sysvar::OTA::UpdateProgress
-{
-  updateProgressStateIndex();
-}
-
-
 
 // [1] OTA 메타데이터 수신 (ID: 0x200)
 on message VUM_OTA_Metadata
@@ -94,6 +108,7 @@ on message VUM_OTA_DataBlock
         gVumBuffer[baseIdx + i] = this.Sig_BlockData0_5.byte(i);
       }
       gCurrentReceived += blockLen;
+      updateProgressStateIndex();
     }
 
     // --- 수신 확인용 로그 추가 ---
@@ -120,5 +135,6 @@ on message VUM_OTA_TransferEnd
     write("[LightECU] 메모리 버퍼(gVumBuffer)에 %ld bytes가 저장되었습니다.", gCurrentReceived);
     write("[확인용] %s", gVumBuffer[0]);
     gIsUpdating = 0; 
+    sendEndMessage();
   }
 }

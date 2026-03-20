@@ -5,7 +5,7 @@
       <Property Name="Name">Xf9c78f60e9c03e4c7ee8cdeec762f9fd2949</Property>
       <Property Name="Size">374, 45</Property>
       <Property Name="Location">657, 48</Property>
-      <Property Name="SymbolConfiguration">8;16;test;;;b;1;;;-1;;;Value;;;0</Property>
+      <Property Name="SymbolConfiguration">8;16;OTA;;;ProgressStateIndex;1;;;-1;;;Value;;;0</Property>
       <Property Name="ImageFile">..\image\progress_bar_list.jpg</Property>
       <Property Name="IsProportional">False</Property>
       <Property Name="TabIndex">8</Property>
