@@ -17,28 +17,12 @@ variables
   int gIsUpdating = 0;
   int gCurrentIgnition = 0; //시동상태 (0:off, 1:acc, 2:on)
   int gCurrentSpeed = 0;// 차량속도
-}
-
-/*--------------------------------------------------
-  UpdateProgress(0~100) -> ProgressStateIndex(0~10)
---------------------------------------------------*/
-void updateProgressStateIndex()
-{
-  long progress;
+  // -- 프로그레스 진행 관련
+  int progressrate;
   int state;
-
-  progress = (double)gCurrentReceived / gExpectedSize * 100;
-  if (progress < 0)
-    progress = 0;
-  else if (progress > 100)
-    progress = 100;
-
-  state = progress / 10;
-
-  SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
-
-  write("[LightECU] UpdateProgress=%d, ProgressStateIndex=%d", progress, state);
+  int panel_state;
 }
+
 
 void sendEndMessage()
 {
@@ -114,14 +98,29 @@ on message VUM_OTA_DataBlock
     // --- 수신 확인용 로그 추가 ---
     // 500개 블록마다 한 번씩 현재 수신 상태를 Write 창에 출력합니다.
     if (this.Sig_BlockSeq % 10 == 0) 
-      {
-        // 데이터의 첫 바이트(byte(0))도 로그에 찍어서 0이 아닌지 확인
-        write("[LightECU] 수신 중... 블록번호: %d | 총량: %ld | 샘플데이터: 0x%02X", (int)this.Sig_BlockSeq, gCurrentReceived, (int)this.Sig_BlockData0_5.byte(0));
-        write("[LightECU] 진행률: %d%% (%ld/%ld bytes)", 
+    {
+      // 데이터의 첫 바이트(byte(0))도 로그에 찍어서 0이 아닌지 확인
+      write("[LightECU] 수신 중... 블록번호: %d | 총량: %ld | 샘플데이터: 0x%02X", (int)this.Sig_BlockSeq, gCurrentReceived, (int)this.Sig_BlockData0_5.byte(0));
+      write("[LightECU] 진행률: %d%% (%ld/%ld bytes)", 
       (int)(gCurrentReceived * 100 / gExpectedSize), 
       gCurrentReceived, 
       gExpectedSize);
-      }
+    }
+    progressrate = (gCurrentReceived * 100 / gExpectedSize);
+    write("[프로그레스진행률] %d",progressrate);
+    state = progressrate/10;
+    SysSetVariableInt(sysvar::OTA::ProgressStateIndex, state);
+      
+    if (gOtaVersion == 2) //OTA프로레스바 출력
+    {
+      panel_state = 10 + (progressrate % 4);
+      SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
+    }
+    else if (gOtaVersion == 1) //롤백 프로그레스바 출력
+    {
+      panel_state = 15 + (progressrate % 4);
+      SysSetVariableInt(sysvar::UI_Status::window_discription, panel_state);
+    }
   }
 }
 
@@ -135,6 +134,25 @@ on message VUM_OTA_TransferEnd
     write("[LightECU] 메모리 버퍼(gVumBuffer)에 %ld bytes가 저장되었습니다.", gCurrentReceived);
     write("[확인용] %s", gVumBuffer[0]);
     gIsUpdating = 0; 
+    
+    // 업데이트 완료 메시지 보내기 ( ->VUM, Telamatics )
     sendEndMessage();
+    
+    present_Version = gOtaVersion; // 업데이트 완료후 버전 업데이트
+    @Update::update_version = present_Version;
+    
+    if (gOtaVersion == 2) //OTA 완료
+    {
+      SysSetVariableInt(sysvar::UI_Status::window_discription, 14);
+      @UI_Status::rollback = 1;
+      @UI_Status::download_btn = 5;
+    }
+    else if (gOtaVersion == 1) //롤백 프로그레스바 출력
+    {
+      SysSetVariableInt(sysvar::UI_Status::window_discription, 0);
+      @UI_Status::rollback = 2;  
+      @UI_Status::download_btn = 2;
+      SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 11);
+    }
   }
 }
