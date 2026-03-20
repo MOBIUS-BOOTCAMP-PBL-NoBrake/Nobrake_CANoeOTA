@@ -110,13 +110,7 @@ on message *
 
   if (this.can == CH_LIGHT)
     {
-      /*
-      if (this.id == 0x252) 
-      {
-        write("[GW] 업데이트 완료 중계 (Light -> Update)");
-        RouteMsg(this, CH_UPDATE);
-      }
-      */
+
     }
   
 }
