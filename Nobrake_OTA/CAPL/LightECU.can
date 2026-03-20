@@ -94,7 +94,6 @@ on message VUM_OTA_DataBlock
         gVumBuffer[baseIdx + i] = this.Sig_BlockData0_5.byte(i);
       }
       gCurrentReceived += blockLen;
-      updateProgressStateIndex();
     }
 
     // --- 수신 확인용 로그 추가 ---
