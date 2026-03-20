@@ -86,6 +86,9 @@ on message *
         //write("[GW] LIghtECU로 업데이트 파일 전송)");
         RouteMsg(this, CH_LIGHT);
       }
+      if( this.id == 0x153){
+        RouteMsg(this, CH_LIGHT);
+      }
     }
 
 

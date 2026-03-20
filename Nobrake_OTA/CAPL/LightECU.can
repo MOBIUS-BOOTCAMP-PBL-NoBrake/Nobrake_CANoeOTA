@@ -6,7 +6,7 @@ includes
 
 variables
 {
-  const LighteECU_ID = 0x01;
+  const LighteECU_ID = 0x34;
     // --- 수신 데이터 버퍼 ---
   byte gVumBuffer[5242880]; // 최대 5MB 버퍼 (메모리에만 상주)
   long gExpectedSize = 0;   // Sig_OTA_TotalSize
@@ -25,7 +25,7 @@ variables
   int panel_state;
 }
 
-
+/* 원래 코드
 void sendEndMessage()
 {
     message Light_OTA_Complete lightECUMsg;
@@ -34,6 +34,30 @@ void sendEndMessage()
 
     lightECUMsg.Sig_TargetECU_ID = 0x01;       // 타겟 ECU ID (예시값)
     lightECUMsg.Sig_OTA_Result = 1;          // 업데이트 종료 상태값 (1 = success)
+    lightECUMsg.Sig_InstalledVersion = gOtaVersion;       // 업데이트 버전
+    lightECUMsg.Sig_ErrorCode = 0;    // 에러코드 (0 = non error)
+    
+    // 3. CAN 버스로 메시지 전송
+    output(lightECUMsg);
+    
+    write("[LightECU] 전송 완료");
+}
+*/
+
+void sendEndMessage()
+{
+    message Light_OTA_Complete lightECUMsg;
+
+    write("[PANEL] 업데이트 완료 메시지 전송을 시작합니다.");
+
+    lightECUMsg.Sig_TargetECU_ID = LighteECU_ID;// 타겟 ECU ID (예시값)
+  
+    if(gOtaVersion==2){
+      lightECUMsg.Sig_OTA_Result = 1;  // 업데이트 종료 상태값 (1 = success)
+    }else{
+      lightECUMsg.Sig_OTA_Result = 2;
+    }
+    
     lightECUMsg.Sig_InstalledVersion = gOtaVersion;       // 업데이트 버전
     lightECUMsg.Sig_ErrorCode = 0;    // 에러코드 (0 = non error)
     
@@ -128,7 +152,7 @@ on message VUM_OTA_DataBlock
 // [3] OTA 전송 종료 수신 (ID: 0x202)
 on message VUM_OTA_TransferEnd
 {
-  if (gIsUpdating == 1 && this.can == 2 && this.dir == Rx)
+  if (gIsUpdating == 1 && this.can == 4 && this.dir == Rx)
   {
     // 파일 저장 로직을 제거하고 완료 로그만 출력
     write("[LightECU] OTA 데이터 수신 완료!");
@@ -147,6 +171,9 @@ on message VUM_OTA_TransferEnd
       SysSetVariableInt(sysvar::UI_Status::window_discription, 14);
       @UI_Status::rollback = 1;
       @UI_Status::download_btn = 5;
+      
+      //update flag 설정
+      @Update::light_flag=1;
     }
     else if (gOtaVersion == 1) //롤백 프로그레스바 출력
     {
@@ -154,6 +181,9 @@ on message VUM_OTA_TransferEnd
       @UI_Status::rollback = 2;  
       @UI_Status::download_btn = 2;
       SysSetVariableInt(sysvar::OTA::ProgressStateIndex, 11);
+      
+      //update flag 설정
+      @Update::light_flag=0;
     }
   }
 }
