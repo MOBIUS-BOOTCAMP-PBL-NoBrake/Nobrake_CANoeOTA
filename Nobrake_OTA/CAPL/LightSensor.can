@@ -48,15 +48,18 @@ on timer tUpdateTimer
   
   
   
-  // 조도 센서 값 변경
-  // 낮 시간 (AM 06:00 ~ PM 06:00)
-  if (t[2] >= 6 && t[2] <= 18) {
-    $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = 0;
-  }
-  // 밤 시간 (그 외 모든 시간)
-  else {
-    $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = 1;
-  }
+  // 조도 센서 값 변경 (시간 기준)
+//  // 낮 시간 (AM 06:00 ~ PM 06:00)
+//  if (t[2] >= 6 && t[2] <= 18) {
+//    $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = 0;
+//  }
+//  // 밤 시간 (그 외 모든 시간)
+//  else {
+//    $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = 1;
+//  }
+  
+  // 조도 센서 값 변경 (패널 기준)
+  $Input::GateWay::Veh_AmbientLux::Sig_AmbientLux = @sysvar::UI_Status::light_sensor;
 
   setTimer(tUpdateTimer, 1000); // 1초 뒤 다시 실행
 }
