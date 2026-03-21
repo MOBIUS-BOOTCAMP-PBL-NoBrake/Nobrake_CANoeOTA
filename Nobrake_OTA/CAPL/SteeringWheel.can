@@ -6,33 +6,19 @@ includes
 variables
 {
   msTimer centerTimer;          // 0으로 복귀시키기 위한 타이머
+  msTimer roadTimer;
   const int interval = 10;      // 10ms마다 각도 수정 (숫자가 작을수록 부드러움)
   const int step = 1;           // 한 번에 복원될 각도 (숫자가 클수록 빠름) (1 = 5도)
   const int initial_value = 18; // 핸들이 0도일 때 초기값
   int road_light = 0;
 }
 
-// 핸들값이 바뀔 때마다 실행
-on sysvar_update sysvar::UI_Status::steering_wheel_btn
-{
-  if (@UI_Status::start_up_btn == 0 || @UI_Status::start_up_btn == 1)
-  {
-    if (@this != 18)
-    {
-      @this = 18;
-    }
-  }
-  else
-  {
-  write("%d",@sysvar::UI_Status::steering_wheel_btn);
-  // 값이 바뀌면 일단 복귀 타이머를 멈춤 (사용자가 조작 중이라는 뜻)
-  cancelTimer(centerTimer);
-  
-  // 1000ms(1초) 동안 값이 안 바뀌면 "손을 뗐다"고 판단하고 타이머 시작
-  setTimer(centerTimer, 1000); 
-  
-  // 속도 50이상일때 도로 꺾임.
+on start{
+  setTimer(roadTimer,1);
+}
 
+on timer roadTimer{
+  // 속도 50이상일때 도로 꺾임.
   // 패널 도로 변경 
   // 조도 값에 따라 밤/낮 도로 변경 : (조도값*3)
   $Input::GateWay::Veh_SteeringAngle::Sig_SteeringAngle = (initial_value - (36-@sysvar::UI_Status::steering_wheel_btn)) * 5; // 휠 인덱스 번호 36부터 시작하도록 수정
@@ -67,6 +53,29 @@ on sysvar_update sysvar::UI_Status::steering_wheel_btn
       @sysvar::UI_Status::road_front = 1 + ($Input::GateWay::Veh_AmbientLux::Sig_AmbientLux*3);
       @sysvar::UI_Status::road_up = 2 + ($Input::GateWay::Veh_AmbientLux::Sig_AmbientLux*5);
   }
+  setTimer(roadTimer,1);
+}
+
+// 핸들값이 바뀔 때마다 실행
+on sysvar_update sysvar::UI_Status::steering_wheel_btn
+{
+  if (@UI_Status::start_up_btn == 0 || @UI_Status::start_up_btn == 1)
+  {
+    if (@this != 18)
+    {
+      @this = 18;
+    }
+  }
+  else
+  {
+  write("%d",@sysvar::UI_Status::steering_wheel_btn);
+  // 값이 바뀌면 일단 복귀 타이머를 멈춤 (사용자가 조작 중이라는 뜻)
+  cancelTimer(centerTimer);
+  
+  // 1000ms(1초) 동안 값이 안 바뀌면 "손을 뗐다"고 판단하고 타이머 시작
+  setTimer(centerTimer, 1000); 
+  
+  
   }
 }
 
