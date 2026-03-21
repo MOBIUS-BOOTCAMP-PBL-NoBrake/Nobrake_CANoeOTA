@@ -10,7 +10,7 @@ variables
   byte gVumBuffer[5242880]; // 최대 5MB 버퍼 (메모리에만 상주)
   long gExpectedSize = 0;   // Sig_OTA_TotalSize
   word gOtaVersion = 0; //Sig_OTA_Version
-  byte gTargetECU_ID; // Sig_TargetECU_ID
+  byte gTargetECU_ID = 0x34; // Sig_TargetECU_ID
   long gCurrentReceived = 0;  
   
   // --- 상태 관리 ---
@@ -140,7 +140,7 @@ void SendMetadata()
   write("[TM] 차량 내 OTA 전송 시작: 메타데이터(0x151) 전송됨.");
 }
 
-// 1.2 롤백데이토 송신
+// 1.2 롤백데이터 송신
 void SendMetadata_rollback()
 {
   message VUM_OTA_Metadata msg;
