@@ -32,6 +32,9 @@ variables
   
   // 가장 마지막 다운로드 버튼 정보
   int gdownload_btn;
+
+  // [새로 추가한 부분] 서버 보고용 메시지 변수 추가
+  message Light_OTA_Complete msg_UpdateLog; 
 }
 
 
@@ -107,11 +110,12 @@ on message TMU_OTA_TransferEnd
     // 파일 저장 로직을 제거하고 완료 로그만 출력
     write("[VUM] OTA 데이터 수신 완료!");
     write("[VUM] 메모리 버퍼(gVumBuffer)에 %ld bytes가 저장되었습니다.", gCurrentReceived);
-    write("[확인용] %s", gVumBuffer[0]);
+    write("[확인용] %d", gVumBuffer[0]);
     gIsUpdating = 0; 
   }
   gTotalBlocks = (gCurrentReceived + 5) / 6; 
   gCurrentBlock = 0;
+  
   
   
   // 메타데이터(0x200) 우선 전송
@@ -119,8 +123,6 @@ on message TMU_OTA_TransferEnd
   // 데이터 전송 타이머 시작 (10ms 후 시작)
   //setTimer(sendTimer, 100);
 }
-
-
 
 
 /*
@@ -250,7 +252,20 @@ void SendTransferEnd()
   output(msg);
   //체크용 로그
   write("[TM] 차량 내 OTA 전송 완료: 종료 프레임(0x153) 전송됨.");
+
+  // [새로 추가한 부분] 업데이트 성공 시 정보 저장 및 서버 보고
+  if (gOtaVersion == 2) 
+  {
+    writeProfileInt("STATUS", "Last_Success_Version", (int)gOtaVersion, "UpdateHistory.ini");
+    msg_UpdateLog.Sig_OTA_Result = 1;
+    msg_UpdateLog.Sig_InstalledVersion = gOtaVersion;
+    msg_UpdateLog.Sig_TargetECU_ID = gTargetECU_ID;
+    output(msg_UpdateLog); 
+    write("[VUM] 업데이트 성공 기록 저장 및 서버 보고 완료");
+  }
+
   gCurrentBlock = 0; //블록 초기화
+  gIsUpdating = 0;
 }
 
 // 업데이트 가능조건 확인
@@ -309,39 +324,57 @@ void OTA_Req()
   write("[VUM] 업데이트 조건 메시지 전달 (UPDATE -> NETWORK)");
 }
 
-
+// [새로 추가한 부분] 주행 중 자동 롤백 조건 추가
+on message Veh_OTA_speedReq 
+{
+  gCurrentSpeed = (int)this.Sig_VehicleSpeed;
+  
+  // 업데이트 중인데 차가 움직이면(속도 > 0) 자동으로 롤백 시퀀스 실행
+  if(gIsUpdating == 1 && gCurrentSpeed > 0)
+  {
+    gIsUpdating = 0;
+    cancelTimer(sendTimer); // 일반 전송 중단
+    
+    // 기존에 있던 롤백 함수와 타이머를 호출
+    SendMetadata_rollback(); 
+    setTimer(sendTimer_roll, 100); 
+    
+    write("[VUM] 위험: 주행 감지로 인해 자동 롤백을 시작합니다.");
+    @UI_Status::window_discription = 15; // 롤백 화면 표시
+  }
+}
 
 
 ///// 클러스터 관련 
 
-  /*
-  다운로드 버튼 @UI_Status::download_btn
-  0: 시동꺼짐 비활성화 (투명)
-  1: 상태 진행중 (빈화면)
-  2: NewSW 다운로드 요청
-  3: DownLoad
-  4: 스마트라이트빔 업데이트 버튼 활성화
-  5: Already exists
+   /*
+   다운로드 버튼 @UI_Status::download_btn
+   0: 시동꺼짐 비활성화 (투명)
+   1: 상태 진행중 (빈화면)
+   2: NewSW 다운로드 요청
+   3: DownLoad
+   4: 스마트라이트빔 업데이트 버튼 활성화
+   5: Already exists
   
-  상태진행창 @UI_Status::window_discription
-  0: 빈화면
-  1: OTA 요청중
-  2: 다운로드 불가
-  3: 다운로드 준비
-  4~7: 다운로드 진행중
-  8: OTA 다운로드 완료!
-  9: 업데이트 불가
-  10~13: 업데이트 진행중 
-  14: 업데이트 완료!
-  15~18: 기능 롤백 진행중
-  19:롤백불가
-  20: already Exist
+   상태진행창 @UI_Status::window_discription
+   0: 빈화면
+   1: OTA 요청중
+   2: 다운로드 불가
+   3: 다운로드 준비
+   4~7: 다운로드 진행중
+   8: OTA 다운로드 완료!
+   9: 업데이트 불가
+   10~13: 업데이트 진행중 
+   14: 업데이트 완료!
+   15~18: 기능 롤백 진행중
+   19:롤백불가
+   20: already Exist
   
-  롤백 버튼
-  0: 비활성화
-  1: 롤백버튼
-  2 : 롤백후 비활성화
-  */
+   롤백 버튼
+   0: 비활성화
+   1: 롤백버튼
+   2 : 롤백후 비활성화
+   */
 
 
 // 다운로드 버튼
